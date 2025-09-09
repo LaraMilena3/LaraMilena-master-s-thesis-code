@@ -34,7 +34,7 @@ library(ssdtools)
 # Imports
 ################
 
-df_list_raw <- readRDS(paste0(inwd, "/data_list.RData")) #check that it is a data frame
+df_list_raw <- readRDS(paste0(inwd, "/data_list_leth_subl.RData")) #check that it is a data frame
 df_list = list()
 for (i in 1:length(df_list_raw)) {
   try(df_list[[i]] <- aggregate(mgperL ~ organism+CAS, data = df_list_raw[[i]], function (x) exp(mean(log(x)))))
