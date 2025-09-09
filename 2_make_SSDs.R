@@ -34,7 +34,7 @@ library(ssdtools)
 # Imports
 ################
 
-df_list_raw <- readRDS(paste0(inwd, "/data_list_leth_subl.RData")) #check that it is a data frame
+df_list_raw <- readRDS(paste0(inwd, "/data_list.RData")) #check that it is a data frame
 df_list = list()
 for (i in 1:length(df_list_raw)) {
   try(df_list[[i]] <- aggregate(mgperL ~ organism+CAS, data = df_list_raw[[i]], function (x) exp(mean(log(x)))))
@@ -66,8 +66,8 @@ for (i in 1:length(names_df_list)){
 #make the SSDs
 #####################################
 
+#make a data frame where the results will be saved in
 effect_all <- data.frame(matrix(ncol = 5, nrow = 0))
-
 colnames(effect_all) <- c("group", "chemical", "HC05", "HC95", "fit")
 
 
@@ -86,9 +86,6 @@ for (i in 1:20){
                                              "lnorm",
                                              "weibull"))
       
-      #Although we can generally see by eye which one os the best fit, lets choose the model thats
-      # the best fit for our data based on the goodness of fit statistics:
-      
       #Examine the goodness of fit for the selected models, and put in in a new dataframe
       Fit_compare <- data.frame(ssd_gof(x = SSD_fit_all, 
                                         pvalue = TRUE))
@@ -99,12 +96,11 @@ for (i in 1:20){
                                     left =  "mgperL",
                                     dists = Best_fit_model)
       
-      #Calcuate the HC05 from the curve, and out it in a new dataframe
-      #   1.  using the best model 
-      
+      #Calcuate the HC05 from the curve
       EC10_HC05_best <- data.frame(ssd_hc(x = SSD_fit_best,
                                           percent = c(5,95)))
-      
+
+      #saving it to the data frame created earlier (attaching another row)
       effect_all[nrow(effect_all) + 1,] <- c(names(df_list[i]),
                                              n,
                                              EC10_HC05_best[1,3],
