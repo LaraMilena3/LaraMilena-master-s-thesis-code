@@ -411,7 +411,7 @@ df_leth_subl <- do.call(rbind, df_list_leth_subl)
 if (printing == TRUE){
   
   #save the data frame as a .csv file:
-  write.csv(x = df_leth_subl, file = paste0(outwd, "/data_leth_subl.csv"))
-  saveRDS(df_list_leth_subl, file=paste0(outwd, "/data_list_leth_subl.RData"))
+  write.csv(x = df_leth_subl, file = paste0(outwd, "/data.csv"))
+  saveRDS(df_list_leth_subl, file=paste0(outwd, "/data_list.RData"))
 }
 
