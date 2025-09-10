@@ -11,7 +11,7 @@ To acchive this several things had to be modified in the original dataset.
 In this File Species Sensitivity Distributions (SSDs) are created from the data. 
 
 3. Venn diagrams: 
-To create an overview of the available data, venn diagrams were created
+Venn diagrams were created to create an overview of the available data
 
 4. SSD range comparison: 
 This file creates boxplots of the range of the Species Sensitivity Distributions for acute and chronic data of every species group
