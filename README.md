@@ -8,7 +8,7 @@ prepare data is the code that turned the original dataset into a data table that
 To acchive this several things had to be modified in the original dataset. 
 
 2. Make SSD: 
-In this File Species Sensitivity Distributions(SSDs) are created from the data. 
+In this File Species Sensitivity Distributions (SSDs) are created from the data. 
 
 3. Venn diagrams: 
 To create an overview of the available data, venn diagrams were created
