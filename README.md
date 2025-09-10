@@ -16,5 +16,5 @@ To create an overview of the available data, venn diagrams were created
 4. SSD range comparison: 
 This file creates boxplots of the range of the Species Sensitivity Distributions for acute and chronic data of every species group
 
-5. randomised SSD: 
-to estimate the distribution of the meassured test concentrations random sampling of tests were used to create the Species Sensitivity Distributions
+5. randomised SSD:
+Species Sensitivity Distributions were created with a random sample of tests. This was done to analyze the distribution of the meassured test concentrations
