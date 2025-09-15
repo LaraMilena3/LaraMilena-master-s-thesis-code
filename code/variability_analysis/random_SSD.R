@@ -28,7 +28,7 @@ species = "fish" #fish / algae / /molluscs / crustaceans
 
 #The parameters of the density plot
 weight = 10 #lnumeric (for log) / sqrt / none / occurence
-sample_size = 100 #numeric (letters are not allowed)
+sample_size = 10000 #numeric (letters are not allowed)
 band_width = 0.15 #numeric / SJ / nrd / nrd0
 
 
