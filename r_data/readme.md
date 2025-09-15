@@ -1,4 +1,4 @@
-This is data of the project. 
+This is the data of the project. 
 
 raw_data.csv is the original data downloaded from EFSA, US EPA ECOTOX and REACH. 
 
