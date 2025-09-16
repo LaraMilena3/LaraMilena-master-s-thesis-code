@@ -246,7 +246,7 @@ names(pharmaceutical)[1] = "CAS"
 pharmaceutical$CAS <- gsub("-", "", pharmaceutical$CAS)
 
 #defining industrial chemicals
-industrial <- read.csv(paste0(inwd, "/ECHA_industrial_chemicals.csv"), skip = 2) #downloaded on 2025.01.16
+industrial <- read.csv(paste0(inwd, "/ECHA_industrial_chemicals.csv"), skip = 2) 
 names(industrial)[3] = "CAS"
 
 industrial$CAS <- gsub("-", "", industrial$CAS)
