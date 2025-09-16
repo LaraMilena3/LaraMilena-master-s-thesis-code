@@ -10,7 +10,7 @@ options(scipen=999) #avoid scientific annotation
 ##############################################
 # Version Number
 ##############################################
-vers<-3
+vers<-2
 
 
 ############
@@ -34,8 +34,10 @@ library(ssdtools)
 # Imports
 ################
 
-df_list_raw <- readRDS(paste0(inwd, "/data_list_leth_subl.RData")) #check that it is a data frame
+df_list_raw <- readRDS(paste0(inwd, "/data_list_leth_subl.RData")) 
 df_list = list()
+#we are only interested in one concentration per chemcial with one species
+#therefore all rows that had the same chemical and species are taken together with the geometric mean
 for (i in 1:length(df_list_raw)) {
   try(df_list[[i]] <- aggregate(mgperL ~ organism+CAS, data = df_list_raw[[i]], function (x) exp(mean(log(x)))))
 }
@@ -46,6 +48,8 @@ names_df_list <- names(df_list)
 
 #########################################################
 # get a list of all chemicals that have 6 tests
+#the SSD tool used in this requires 6 different species to function
+#therefore all other chemicals have to be removed
 ###################################################
 
 for (i in 1:length(names_df_list)){
@@ -70,13 +74,17 @@ for (i in 1:length(names_df_list)){
 effect_all <- data.frame(matrix(ncol = 5, nrow = 0))
 colnames(effect_all) <- c("group", "chemical", "HC05", "HC95", "fit")
 
-
+#run it 20 times because we have 20 different data frames (one for every group)
 for (i in 1:20){
+  #this timer with the time code at the end is, so it can be seen how long it took
   start.time <- Sys.time()
   for (n in get(paste0("CAS_list", i))){
     df2 <- df_list[[i]][df_list[[i]]$CAS == n,]
+    #SSDtools fails if all species have the same concentration
+    #therefore it has to be checked that there is at last 2 unique values
     if (length(unique(df2$mgperL)) > 1){
-      
+
+      #using several models to fit the SSD so we can afterwards check which one fits the best
       SSD_fit_all <- ssd_fit_dists(data = df2, 
                                    left =  "mgperL",
                                    dists = c("burrIII3",
@@ -96,7 +104,7 @@ for (i in 1:20){
                                     left =  "mgperL",
                                     dists = Best_fit_model)
       
-      #Calcuate the HC05 from the curve
+      #Calcuate the HC05  and the HC95 from the curve
       EC10_HC05_best <- data.frame(ssd_hc(x = SSD_fit_best,
                                           percent = c(5,95)))
 
@@ -115,6 +123,7 @@ for (i in 1:20){
 
 
 
-
+#saving the results
+#saving everything as characters helped to resolve a problem with saving
 effect_all <- apply(effect_all,2,as.character)
 write.csv(x = effect_all, file = paste0(outwd, "/effect_of_chemicals.csv"))
