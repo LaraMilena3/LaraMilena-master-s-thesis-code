@@ -10,7 +10,7 @@ options(scipen=999) #avoid scientific annotation
 ##############################################
 # Version Number
 ##############################################
-vers<-3
+vers<-5
 
 ##############################################
 # Set constants
@@ -24,15 +24,11 @@ FALSE -> printing
 # Set the current workdirectory, i.e. where all files are kept
 ############
 
-#This defines a string which contains the filepath for the working directory.
-# These folders must already have been created beforehand.
-# You dont have to call them "data" or "r_output", 
-# if you want to use a different naming convention its up to you...
-
+#the folder where the data comes from
 inwd <- "r_data"
-inwd2 <- "r_output"
+#the folder the data gets saved too
+#since this file creates a smaller standardised csv file, it gets saved back into r_data
 outwd <- "r_data"
-outwd2 <- "r_output"
 
 
 ################
@@ -45,6 +41,8 @@ library("data.table")
 library("webchem")
 library("stringr")
 
+#this function will be used to later to check if a test duration was durring a specific timeframe
+#it returns either 1 or 0 which will be saved inside a column
 time.interest = function(data, x, y){
   ifelse(data >= x & data <= y, 1, 0)
 }
@@ -53,92 +51,96 @@ time.interest = function(data, x, y){
 # Imports
 ################
 
-#First thing, import the data.
-# the filetype of the data is an Excel Workbook with an ".xlsx" suffix at the end of the filename.
-# To import the data, we are using "read_xlsx".
-#
-# For other filetypes (e.g. ".csv"), there are other options such as read.csv() or read_csv()
+data <- read.csv(paste0(inwd, "/raw_data.csv")) 
+source_chemical <- read.csv(paste0(inwd, "/source_with_cas.csv")) 
 
-
-data <- read.csv(paste0(inwd, "/raw_data.csv")) #check that it is a data frame
-source_chemical <- read.csv(paste0(inwd, "/source_with_cas.csv")) #check that it is a data frame
-
-data$test_location <- ifelse(grepl("FIELD", data$test_location), "FIELD", "LAB")
-
-test <- data[grepl("FIELD", data$test_location),]
-test <- test[test$species_group == "algae",]
-#first <- as.data.frame(sort(table(test$endpoint), decreasing = TRUE))
-#data <- test
-#I use this constantly for data exploration 
-data$count <- 1 #can be useful, for example for aggregate
-
+####################################################################################################3
+#main body
+#####################################################################################
 #################################
 #removing duplicates and giving an index
 ##########################
 data <- data[!duplicated(data), ]
 setDT(data, keep.rownames = TRUE)[]
 data$rn <- as.integer(data$rn)
-data$laramilena_index <- data$rn + 1000000
+data$milena_index <- data$rn + 1000000
 data$rn <- NULL
 data <- as.data.frame(data)
 
 ################################
 #renaming  and redefining stuff
 ####################################
+
 names(data)[1] <- "organism"
 data$CAS <- as.character(data$CAS)
 
-#all diferent field test are counted a field tests
-data$test_location <- ifelse(grepl("FIELD", data$test_location), "FIELD", data$test_location)
+
+#there are differnt kind of field tests. 
+#for this project that difference is not important, therefore all field tests get the same name
+#if it's not declared as a field tests it's going to be a lab test, therefore all other cases are defined as LAB
+data$test_location <- ifelse(grepl("FIELD", data$test_location), "FIELD", "LAB")
 
 ########################################
 #remove rows that are not needed for the analysis
 ################################
 
-
-#Numeric qualifiers other than "="
+#only tests with a clearly specified concentration can be used for further analysis
 data = data[data$conc_sign == "=",]
 
-#no mgperL added
+#tests that did not specify a concentration or that reported the concentration as 0 can not be used
+#a concentration of 0 can not be used because that doesn't make sense
 data <- data[!is.na(data$mgperL),]
 data <- data[data$mgperL != 0, ]
 
 #####################################
-#remove all the rows without a singular specified chemical
+#we can only need rows that have one tested chemical
+#but some rows have the chemical information in the source column
+#this part of the code checkes all unique words in the source column if they are a chemical
+
+#if this section of the code has been run before it can get skipped, since it saves a file of the results
+##############################
+
 #find all the chemicals with a cas number in the source column
 #and save it in the CAS column
-##############################
-#no_CAS <- data[is.na(data$CAS),]
-#no_CAS <- unique(no_CAS$source)
+no_CAS <- data[is.na(data$CAS),]
+no_CAS <- unique(no_CAS$source)
 
-#source_temp = cir_query(no_CAS,
-#                match = "first",
-#                representation = "cas"
-#)
+#this checks if the words in the source column are a chemical
+source_temp = cir_query(no_CAS,
+                match = "first",
+                representation = "cas"
+)
 
-#source_temp <- gsub("-", "", source_temp$CAS)
+#this adds the CAS number to one data frame
+source_temp <- gsub("-", "", source_temp$CAS)
+source_chemical <- source_temp[!is.na(source_temp),]
 
-#source_chemical <- source_temp[!is.na(source_temp),]
-#write.csv(x = source_chemical, file = paste0(inwd, "/source_with_cas.csv"))
+#save it as a file so this step can be skipped next time
+write.csv(x = source_chemical, file = paste0(inwd, "/source_with_cas.csv"))
 
-#rm(no_CAS)
-#rm(source_temp)
+rm(no_CAS)
+rm(source_temp)
 
+###################################
+#adding a cas number where a singular chemical is in the source field
+######################
+
+#to increase the speed all rows that have substance or reaction in the source column and no cas number or chemical name are removed
 data <- data[!is.na(data$CAS) | !is.na(data$chemical_name) | !grepl(pattern = "ubstance|eaction", x = data$source), ]
 
+#give the CAS column in the source_chemical dataframe a different name as in the main dataframe
 names(source_chemical) <- c("query", "CAS2")
-#replace NA values of Data with the CAS values from source
+#replace NA values of Data with the CAS values from the source column
 data <- data %>%
   left_join(source_chemical, by = c("source" = "query")) %>%
   mutate(CAS = ifelse(is.na(CAS), CAS2, CAS)) %>%
   select(-CAS2)
 
 ########################################
-#remove more rows that are not needed for the analysis
+#remove additional rows that are not needed for the analysis
 ################################
 
-#remove values where the chemical is not specified
-
+#remove rows where the chemical is not specified
 data <- data[!is.na(data$CAS),]
 
 #only include the species groups we are interested in
@@ -148,8 +150,8 @@ data <- data[grepl("algae|crustaceans|fish|molluscs", data$species_group),]#only
 data$organism <- str_trim(data$organism, side = "right")
 data <- data[grepl(" ", data$organism), ]
 data <- data[!grepl("sp\\.", data$organism), ]
-data <- data[!grepl("species", data$organism),]#remove rows where several species where tested
-data <- data[!grepl("algae", data$organism),]#remove rows where the species is only specified as algae
+data <- data[!grepl("species", data$organism),] #remove rows where several species where tested
+data <- data[!grepl("algae", data$organism),] #remove rows where the species is only specified as algae
 
 #only keep the effects we are interested in
 data <- data[grepl("DVP|GRO|ITX|MOR|MPH|POP|REP", data$effect),]
@@ -201,7 +203,6 @@ colums_to_remove <- c("rn",
                       "result_id",
                       "ncbi_taxid",
                       "database")
-
 for (i in colums_to_remove){
   data[[i]] <- NULL
 }
